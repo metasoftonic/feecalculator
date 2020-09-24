@@ -1,0 +1,146 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    <h3>Parkway Projects: Fee Calculator</h3>
+    <p>This is a simple transfer fee calculator. </p>
+</div>
+<form method="post" style="padding: 10px 0 30px" asp-action="TransferFee" asp-controller="Home" asp-antiforgery="true" id="form" class="form">
+    <div class="form-group alc">
+        <input style="display:inline-block;max-width: 372px;  height: 51px;" class="form-control" required id="amount" type="number" placeholder="Enter Transfer Amount" /><span id="chargeDisplay" style="padding-left:10px; font-weight:600">Transaction Charge: 0</span>
+    </div>
+    <div class="form-group">
+        <button type="button" id="submitBtn" class="btn btn-primary dark">Calculate Fee</button>
+        <button type="button" id="submitBtnSurcharge" class="btn btn-primary dark">Calculate Surcharge</button>
+        <button type="button" id="resetBtn" class="btn btn-danger">Reset Form</button>
+
+    </div>
+
+</form>
+
+<div class="row">
+    <div class="col-md-12" style="padding-bottom: 40px;">
+            <table class="table" id="displayTable">
+                <thead>
+                    <tr>
+                        <th scope="col">Amount</th>
+                        <th scope="col">Transfer Amount</th>
+                        <th scope="col">Charge</th>
+                        <th scope="col">Debit Amount (Transfer Amount + Charge)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="amountDisplay"></td>
+                        <td id="transferAmount"></td>
+                        <td id="charge"></td>
+                        <td id="debitAmount"></td>
+                    </tr>
+                </tbody>
+            </table>
+    </div>
+</div>
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function ()
+        {
+            $("#chargeDisplay").hide();
+            $("#displayTable").hide();
+            $("#submitBtn").click(function ()
+            {
+                let amount = parseFloat($("#amount").val());
+                if (isNaN(amount) || amount < 1)
+                {
+                    alerty("warning", "Opps", "Amount must be greater than 0");
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("TransferFee", "Home")',
+                    type: 'POST',
+                    data: {
+                        amount: amount
+                    },
+                    success: function (response)
+                    {
+                        if (response.status)
+                        {
+                            $("#chargeDisplay").text(`Transaction Charge: ${response.charge}`);
+                            $("#chargeDisplay").show();
+                            alerty("success", "Yeah!!!", response.message);
+                            $("#form")[0].reset()
+                            return;
+                        }
+
+                    }, error: function ()
+                    {
+                        alerty("danger", "Opps", "Error Processing request");
+                        return;
+                    }
+
+                });
+
+            });
+
+
+            $("#resetBtn").click(function()
+            {
+                $("#chargeDisplay").hide();
+                $("#displayTable").hide();
+                $("#form")[0].reset()
+            })
+
+            $("#submitBtnSurcharge").click(function ()
+            {
+                let amount = parseFloat($("#amount").val());
+                if (isNaN(amount) || amount < 1)
+                {
+                    alerty("warning", "Opps", "Amount must be greater than 0");
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("SurChargeFee", "Home")',
+                    type: 'POST',
+                    data: {
+                        amount
+                    },
+                    success: function (response)
+                    {
+                        if (response.status)
+                        {
+                            $("#displayTable").show();
+                            $("#amountDisplay").text(response.amount);
+                            $("#transferAmount").text(response.transferAmount);
+                            $("#charge").text(response.charge);
+                            $("#debitAmount").text(response.debitAmount);
+                            $("#form")[0].reset()
+                        }
+                        alerty("success", "Yeah!!!", response.message);
+                        return
+
+                    }, error: function ()
+                    {
+                        alerty("danger", "Opps", "Error Processing request");
+                        return;
+                    }
+                });
+            })
+            function alerty(type, header = "", msg = "")
+            {
+                $(".alc").prepend(
+                    `<div class="alerty alert alert-${type} " id="bsalert">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                <strong>${header}</strong> ${msg}
+            </div>`
+                );
+                $("#bsalert").removeClass("hide");
+                $("#bsalert").addClass("show");
+                setTimeout(function ()
+                {
+                    $('.alerty .close').click();
+                }, 3000)
+            }
+        })
+    </script>
+
+}
